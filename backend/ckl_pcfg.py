@@ -1,16 +1,33 @@
-import pickle
-from hashlib import md5
 import os
+import pickle
 
-from monte_carlo_lib import MonteCarloLib
 from fast_bpe_sim import calc_ml2p
+from monte_carlo_lib import MonteCarloLib
 
-current_dir = os.path.dirname(__file__)
-grammars, terminals = pickle.load(open(os.path.join(current_dir, "resources/bpemodel.pickle"), 'rb'))
-converted, not_parsed = pickle.load(open(os.path.join(current_dir, "resources/intermediate_results.pickle"), 'rb'))
-dangerous_chunks = pickle.load(open(os.path.join(current_dir,"resources/dangerous_chunks.pickle"), 'rb'))
-monte_carlo_sample = pickle.load(open(os.path.join(current_dir, "resources/monte_carlo_sample.pickle"), 'rb'))
-monte_carlo = MonteCarloLib(monte_carlo_sample)
+
+def load_pickles(folder: str):
+    def gen_path(x: str):
+        return os.path.join(folder, x)
+
+    model_pickle, inter_pickle, danger_pickle, samples_pickle = \
+        gen_path('bpemodel.pickle'), gen_path('intermediate_results.pickle'), \
+        gen_path('dangerous_chunks.pickle'), gen_path('monte_carlo_sample.pickle')
+    with open(model_pickle, 'rb') as f_model_pickle, \
+            open(inter_pickle, 'rb') as f_inter_pickle, \
+            open(danger_pickle, 'rb') as f_danger_pickle, \
+            open(samples_pickle, 'rb') as f_samples_pickle:
+        _grammars, _terminals = pickle.load(f_model_pickle)
+        _converted, _not_parsed = pickle.load(f_inter_pickle)
+        _dangerous_chunks = pickle.load(f_danger_pickle)
+        _samples = pickle.load(f_samples_pickle)
+        return (_grammars, _terminals), (_converted, _not_parsed), _dangerous_chunks, _samples
+    pass
+
+
+current_dir = os.path.join(os.path.dirname(__file__), 'resources')
+(grammars, terminals), (converted, not_parsed), dangerous_chunks, samples = load_pickles(current_dir)
+monte_carlo = MonteCarloLib(samples)
+
 
 def check_pwd(pwd: str):
     """Check the strength of given password.
@@ -45,5 +62,6 @@ def check_pwd(pwd: str):
         "prob": 2 ** -prob,
     }
 
-def is_dangerous_chunk(chunk:str):
+
+def is_dangerous_chunk(chunk: str):
     return chunk in dangerous_chunks
