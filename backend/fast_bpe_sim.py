@@ -35,7 +35,7 @@ def luds(pwd: str):
     return tuple(struct)
 
 
-def calc_ml2p(__converted, __not_parsed, grammars, terminals, pwd: str) -> Tuple[Any, float]:
+def calc_ml2p(__converted, __not_parsed, grammars, terminals, pwd: str, max_attempts=10) -> Tuple[Any, float]:
     """
     Calculate probability of given password. 
     converted: The template has already converted.
@@ -57,7 +57,8 @@ def calc_ml2p(__converted, __not_parsed, grammars, terminals, pwd: str) -> Tuple
         candidate_structures.update(addon_candidate_structures)
         if len(candidate_structures) == 0:
             return get_luds, log_max
-    results = []
+    wanted_candidate, wanted_p = None, log_max + 10.0
+    attempt = 0
     for candidate in candidate_structures:
         p = grammars.get(candidate, log_max)
         if p == log_max:
@@ -72,12 +73,9 @@ def calc_ml2p(__converted, __not_parsed, grammars, terminals, pwd: str) -> Tuple
                 break
             else:
                 p += terminal[replacement]
-        if p < log_max:
-            results.append((candidate, p))
-    if len(results) == 0:
-        min_minus_log_prob = log_max
-        candidate = get_luds
-    else:
-        candidate, min_minus_log_prob = min(results, key=lambda x: x[1])
-        # candidate = [f"{tag}{t_len}" for tag, t_len in candidate]
-    return candidate, min_minus_log_prob
+        if p < wanted_p:
+            wanted_candidate, wanted_p = candidate, p
+        attempt += 1
+        if attempt > max_attempts:
+            break
+    return wanted_candidate, wanted_p
