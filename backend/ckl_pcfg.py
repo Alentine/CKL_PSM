@@ -70,6 +70,45 @@ def is_dangerous_chunk(chunk: str):
     return chunk in dangerous_chunks
 
 
+def opt4xl(json_file: str):
+    with open(json_file, 'r') as f_json:
+        # first 5 lines are metadata and so on
+        f_json.readline()
+        # data_name
+        f_json.readline()
+        # passwd_count
+        pc_line = f_json.readline()
+        # passwd_count = filter(str.isdigit, f_json.readline())
+        print(pc_line)
+
+        pc = [c for c in pc_line if c.isdigit()]
+        print(pc)
+        passwd_count = int("".join(pc))
+        yield passwd_count
+        # block_list and "passwd": {
+        f_json.readline()
+        f_json.readline()
+        j_str = ["{"]
+        for line in f_json:
+            line = line.strip("\r\n")
+            if line.endswith('},') or line.endswith('}'):
+                continue
+            j_str.append(line)
+
+            if line.endswith("]") and len(j_str) > 1:
+                # parse j_str
+                j_str.append("}}")
+                j_str = "".join(j_str)
+                print(j_str)
+                info = json.loads(j_str)
+                j_str = ["{"]
+                pwd, = info.keys()
+                v, = info.values()
+                yield pwd, v['count'], v['matched_rules']
+        pass
+    pass
+
+
 if __name__ == '__main__':
     cli = argparse.ArgumentParser("Checking Password Strength")
     # cli.add_argument("-p", '--pw', required=True, help='Passwords, one password per line')
@@ -83,14 +122,14 @@ if __name__ == '__main__':
     save_ids = [None]  # rule id starts from 1, instead of 0
     for rule_id in range(1, 8):
         save_ids.append(open(os.path.join(save_folder, f"rule-{rule_id}.txt"), 'w'))
-    with open(args.rule_of_pw) as f_pw:
-        rule_of_pw = json.load(f_pw)
-        all_pws = rule_of_pw['passwds']
-        total_count = rule_of_pw['passwd_count']
+    opted = opt4xl(args.rule_of_pw)
+    total_count = next(opted)
+    # with open(args.rule_of_pw) as f_pw:
+    #     rule_of_pw = json.load(f_pw)
+    #     all_pws = rule_of_pw['passwds']
+    #     total_count = rule_of_pw['passwd_count']
     parsed_num = 0
-    for _pwd, _rules in all_pws.items():
-        pw_cnt = _rules['count']
-        pw_rules = _rules['matched_rules']
+    for _pwd, pw_cnt, pw_rules in opted:
         result = check_pwd(_pwd)
         result['pw'] = _pwd
         result['cnt'] = pw_cnt
