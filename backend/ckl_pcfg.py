@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import pickle
+import sys
 
 from fast_bpe_sim import calc_ml2p
 from monte_carlo_lib import MonteCarloLib
@@ -85,6 +86,8 @@ if __name__ == '__main__':
     with open(args.rule_of_pw) as f_pw:
         rule_of_pw = json.load(f_pw)
         all_pws = rule_of_pw['passwds']
+        total_count = rule_of_pw['passwd_count']
+    parsed_num = 0
     for _pwd, _rules in all_pws.items():
         pw_cnt = _rules['count']
         pw_rules = _rules['matched_rules']
@@ -95,6 +98,9 @@ if __name__ == '__main__':
         for pw_rule_id in pw_rules:
             f_rule_id = save_ids[pw_rule_id]
             f_rule_id.write(json_result)
+        parsed_num += 1
+        if parsed_num % 10000 == 0:
+            print(f"{parsed_num / total_count * 100:7.4}%", end='\r', file=sys.stderr)
         pass
     for rule_id in range(1, 8):
         save_ids[rule_id].flush()
