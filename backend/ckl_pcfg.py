@@ -71,12 +71,32 @@ def is_dangerous_chunk(chunk: str):
 
 if __name__ == '__main__':
     cli = argparse.ArgumentParser("Checking Password Strength")
-    cli.add_argument("-p", '--pw', required=True, help='Passwords, one password per line')
-    cli.add_argument("-s", '--save', required=True, help='Saving results in this file, each line is in json format')
+    # cli.add_argument("-p", '--pw', required=True, help='Passwords, one password per line')
+    cli.add_argument('-r', '--rule-of-pw', required=True, help='Rules of each password')
+    cli.add_argument("-s", '--save-folder', required=True,
+                     help='Saving results in this folder, each line is in json format')
     args = cli.parse_args()
-    with open(args.pw) as f_pw, open(args.save, 'w') as f_save:
-        for _pw_line in f_pw:
-            _pw_line = _pw_line.strip('\r\n')
-            _result = check_pwd(_pw_line)
-            f_save.write(f"{json.dumps(_result)}\n")
+    save_folder = args.save_folder
+    if not os.path.exists(save_folder):
+        os.mkdir(save_folder)
+    save_ids = [None]  # rule id starts from 1, instead of 0
+    for rule_id in range(1, 8):
+        save_ids.append(open(os.path.join(save_folder, f"rule-{rule_id}.txt"), 'w'))
+    with open(args.rule_of_pw) as f_pw:
+        rule_of_pw = json.load(f_pw)
+        all_pws = rule_of_pw['passwds']
+    for _pwd, _rules in all_pws.items():
+        pw_cnt = _rules['count']
+        pw_rules = _rules['matched_rules']
+        result = check_pwd(_pwd)
+        result['pw'] = _pwd
+        result['cnt'] = pw_cnt
+        json_result = f"{json.dumps(result)}\n"
+        for pw_rule_id in pw_rules:
+            f_rule_id = save_ids[pw_rule_id]
+            f_rule_id.write(json_result)
+        pass
+    for rule_id in range(1, 8):
+        save_ids[rule_id].flush()
+        save_ids[rule_id].close()
     pass
