@@ -1,3 +1,5 @@
+import argparse
+import json
 import os
 import pickle
 
@@ -65,3 +67,16 @@ def check_pwd(pwd: str):
 
 def is_dangerous_chunk(chunk: str):
     return chunk in dangerous_chunks
+
+
+if __name__ == '__main__':
+    cli = argparse.ArgumentParser("Checking Password Strength")
+    cli.add_argument("-p", '--pw', required=True, help='Passwords, one password per line')
+    cli.add_argument("-s", '--save', required=True, help='Saving results in this file, each line is in json format')
+    args = cli.parse_args()
+    with open(args.pw) as f_pw, open(args.save, 'w') as f_save:
+        for _pw_line in f_pw:
+            _pw_line = _pw_line.strip('\r\n')
+            _result = check_pwd(_pw_line)
+            f_save.write(f"{json.dumps(_result)}\n")
+    pass
