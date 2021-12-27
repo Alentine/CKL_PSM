@@ -99,7 +99,6 @@ def opt4xl(json_file: str):
                 # parse j_str
                 j_str.append("}}")
                 j_str = "".join(j_str)
-                print(j_str)
                 info = json.loads(j_str)
                 j_str = ["{"]
                 pwd, = info.keys()
