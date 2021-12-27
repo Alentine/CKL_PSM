@@ -79,10 +79,7 @@ def opt4xl(json_file: str):
         # passwd_count
         pc_line = f_json.readline()
         # passwd_count = filter(str.isdigit, f_json.readline())
-        print(pc_line)
-
         pc = [c for c in pc_line if c.isdigit()]
-        print(pc)
         passwd_count = int("".join(pc))
         yield passwd_count
         # block_list and "passwd": {
